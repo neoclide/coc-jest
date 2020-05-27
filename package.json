@@ -69,6 +69,16 @@
         "jest.configFileName": {
           "type": "string",
           "default": "jest.config.js"
+        },
+        "jest.customFlags": {
+          "type": "array",
+          "description": "Pass additional custom flags to Jest command.",
+          "default": [],
+          "items": {
+            "type": "string",
+            "description": "A flag, without the '--'. For example: 'runInBand' or 'useStderr'.",
+            "default": ""
+          }
         }
       }
     },

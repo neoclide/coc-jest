@@ -111,6 +111,11 @@ async function resolveConfig(): Promise<string> {
       args.push(`--${name}`)
     }
   }
+  if (config.get('customFlags')) {
+    for (let flag of config.get<String[]>('customFlags')) {
+      args.push(`--${flag}`)
+    }
+  }
   return args.join(' ')
 }
 
