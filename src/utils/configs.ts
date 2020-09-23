@@ -1,69 +1,69 @@
-import { Workspace } from 'coc.nvim/lib/workspace'
+import { workspace } from 'coc.nvim'
 
 let optionsNames = [
-    "detectLeaks",
-    "watchman",
-    "detectOpenHandles",
-    "forceExit",
-    "noStackTrace",
+  "detectLeaks",
+  "watchman",
+  "detectOpenHandles",
+  "forceExit",
+  "noStackTrace",
 ]
 
-export const getJestFlagsFromConfig = async (ws: Workspace): Promise<string> => {
-    let args = []
+export const getJestFlagsFromConfig = async (): Promise<string> => {
+  let args = []
 
-    const config = await getConfiguration(ws)
+  const config = await getConfiguration()
 
-    for (let name of optionsNames) {
-        if (config.get<boolean>(name)) {
-            args.push(`--${name}`)
-        }
+  for (let name of optionsNames) {
+    if (config.get<boolean>(name)) {
+      args.push(`--${name}`)
     }
-    if (config.get("customFlags")) {
-        for (let flag of config.get<String[]>("customFlags")) {
-            args.push(`--${flag}`)
-        }
+  }
+  if (config.get("customFlags")) {
+    for (let flag of config.get<String[]>("customFlags")) {
+      args.push(`--${flag}`)
     }
-    return args.join(" ")
+  }
+  return args.join(" ")
 }
 
-export const getTerminalPosition = async (ws: Workspace): Promise<string> => {
-    const config = await getConfiguration(ws)
-    const terminalPosition = config.get<string>('terminalPosition')
+export const getTerminalPosition = async (): Promise<string> => {
+  const config = await getConfiguration()
+  const terminalPosition = config.get<string>('terminalPosition')
 
-    if (terminalPosition === undefined) {
-        return 'right'
-    }
+  if (terminalPosition === undefined) {
+    return 'right'
+  }
 
-    return terminalPosition
+  return terminalPosition
 }
 
-export const isWatchAllCmd = async (ws: Workspace) => {
-    const watch = await isWatch(ws)
+export const isWatchAllCmd = async () => {
+  const watch = await isWatch()
 
-    if (watch) {
-        return ' --watchAll'
-    }
+  if (watch) {
+    return ' --watchAll'
+  }
 
-    return ''
+  return ''
 }
 
-export const isWatchCmd = async (ws: Workspace) => {
-    const watch = await isWatch(ws)
+export const isWatchCmd = async () => {
+  const watch = await isWatch()
 
-    if (watch) {
-        return ' --watch'
-    }
+  if (watch) {
+    return ' --watch'
+  }
 
-    return ''
+  return ''
 }
 
-const isWatch = async (ws: Workspace) => {
-    const config = await getConfiguration(ws)
+const isWatch = async () => {
+  const config = await getConfiguration()
 
-    return config.get('watch')
+  return config.get('watch')
 }
 
-export const getConfiguration = async (ws: Workspace) => {
-    let document = await ws.document
-    return ws.getConfiguration('jest', document ? document.uri : undefined)
+export const getConfiguration = async () => {
+  let document = await workspace.document
+  return workspace.getConfiguration('jest', document ? document.uri : undefined)
 }

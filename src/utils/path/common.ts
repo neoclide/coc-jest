@@ -1,6 +1,6 @@
+import fs from "fs"
 import path from "path"
 import util from "util"
-import fs from "fs"
 
 export const findUp = async (
   filename: string,

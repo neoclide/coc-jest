@@ -1,6 +1,4 @@
 import { ExtensionContext, workspace, commands } from "coc.nvim"
-
-import { getCurrentFilePath } from "./utils/path/currentFile"
 import { makeJestBinCmd } from "./utils/path/jest"
 import { makeJestConfigCmd } from "./utils/path/jestConfig"
 import {
@@ -24,51 +22,58 @@ export async function activate(context: ExtensionContext): Promise<void> {
   )
 }
 
-async function initJest(): Promise<void>  {
+async function initJest(): Promise<void> {
   let { root } = workspace
 
   workspace.runTerminalCommand("jest --init", root)
 }
 
 async function runProject(): Promise<void> {
-  const cmd = await isWatchAllCmd(workspace)
+  const cmd = await isWatchAllCmd()
 
   await runJestCommand(cmd)
 }
 
-async function runFile(): Promise<void>  {
-  const watchCmd = await isWatchCmd(workspace)
-  const currentFilePath = await getCurrentFilePath(workspace)
+async function runFile(): Promise<void> {
+  const watchCmd = await isWatchCmd()
+  const currentFilePath = await workspace.nvim.eval('expand("%:p")')
 
   const cmd = `--runTestsByPath ${currentFilePath} ${watchCmd}`
 
   await runJestCommand(cmd)
 }
 
-async function runSingleTest(): Promise<void>  {
-  const watchCmd = await isWatchCmd(workspace)
-  const testName = await findNearestTest(workspace)
-  const currentFilePath = await getCurrentFilePath(workspace)
+async function runSingleTest(): Promise<void> {
+  const watchCmd = await isWatchCmd()
+  let testName = await findNearestTest()
+  testName = testName.replace(/'/g, "\\'")
+  const currentFilePath = await workspace.nvim.eval('expand("%:p")')
 
-  return runJestCommand(`--runTestsByPath ${currentFilePath} -t=${testName} ${watchCmd}`)
+  return runJestCommand(`--runTestsByPath ${currentFilePath} -t='${testName}' ${watchCmd}`)
 }
 
-async function runJestCommand(cmd = ""): Promise<void>  {
-  const jestBinCmd = await makeJestBinCmd(workspace)
-  const jestConfigCmd = await makeJestConfigCmd(workspace)
+async function runJestCommand(cmd = ""): Promise<void> {
+  const jestBinCmd = await makeJestBinCmd()
+  const jestConfigCmd = await makeJestConfigCmd()
 
   await openTerminal(`${jestBinCmd} ${jestConfigCmd} ${cmd}`)
 }
 
-async function openTerminal(cmd: string): Promise<void>  {
-  const flags = await getJestFlagsFromConfig(workspace)
-  const position = await getTerminalPosition(workspace)
+let terminalBufnr
+async function openTerminal(cmd: string): Promise<void> {
+  const flags = await getJestFlagsFromConfig()
+  const position = await getTerminalPosition()
 
-  await nvim.call("coc#util#open_terminal", {
+  if (terminalBufnr) {
+    nvim.command(`silent! bd! ${terminalBufnr}`, true)
+    terminalBufnr = undefined
+  }
+
+  terminalBufnr = await nvim.call("coc#util#open_terminal", {
     autoclose: 0,
     keepfocus: 1,
     position,
     cwd: workspace.cwd,
     cmd: `${cmd} ${flags}`,
-  })
+  }) as number
 }

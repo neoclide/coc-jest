@@ -1,9 +1,9 @@
-import { Workspace } from "coc.nvim/lib/workspace"
+import { workspace } from 'coc.nvim'
 import { isFileExist } from "./common"
 import path from "path"
 
-export const makeJestBinCmd = async (ws: Workspace) => {
-  const jestBinPath = await findJestBinPath(ws)
+export const makeJestBinCmd = async () => {
+  const jestBinPath = await findJestBinPath()
 
   if (jestBinPath === "") {
     return "jest"
@@ -12,8 +12,8 @@ export const makeJestBinCmd = async (ws: Workspace) => {
   return `node ${jestBinPath}`
 }
 
-const findJestBinPath = async (ws: Workspace) => {
-  const { root } = ws
+const findJestBinPath = async () => {
+  const { root } = workspace
 
   for (let name of ["jest", "jest.cmd"]) {
     const jestPath = path.join(root, `node_modules/.bin/${name}`)
