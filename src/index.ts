@@ -1,159 +1,74 @@
-import { Uri, ExtensionContext, workspace, commands } from 'coc.nvim'
-import path from 'path'
-import which from 'which'
-import { findUp, existAsync } from './util'
+import { ExtensionContext, workspace, commands } from "coc.nvim"
 
-let bufnr: number
-let { nvim } = workspace
+import { getCurrentFilePath } from "./utils/path/currentFile"
+import { makeJestBinCmd } from "./utils/path/jest"
+import { makeJestConfigCmd } from "./utils/path/jestConfig"
+import {
+  getTerminalPosition,
+  getJestFlagsFromConfig,
+  isWatchAllCmd,
+  isWatchCmd,
+} from "./utils/configs"
+import { findNearestTest } from "./utils/findTest"
+
+const { nvim } = workspace
 
 export async function activate(context: ExtensionContext): Promise<void> {
-  let { subscriptions } = context
+  const { subscriptions } = context
 
-  subscriptions.push(commands.registerCommand('jest.init', initJest))
-  subscriptions.push(commands.registerCommand('jest.projectTest', jestProject))
-  subscriptions.push(commands.registerCommand('jest.fileTest', jestFile, null, true))
-  subscriptions.push(commands.registerCommand('jest.singleTest', jestSingle))
+  subscriptions.push(commands.registerCommand("jest.init", initJest))
+  subscriptions.push(commands.registerCommand("jest.projectTest", runProject))
+  subscriptions.push(commands.registerCommand("jest.fileTest", runFile, null, true))
+  subscriptions.push(
+    commands.registerCommand("jest.singleTest", runSingleTest),
+  )
 }
 
-async function initJest(): Promise<void> {
-  let { cwd } = workspace
-  workspace.runTerminalCommand('jest --init', cwd)
+async function initJest(): Promise<void>  {
+  let { root } = workspace
+
+  workspace.runTerminalCommand("jest --init", root)
 }
 
-async function jestFile(filename: string): Promise<void> {
-  let { cwd } = workspace
-  if (filename == '%') {
-    let document = await workspace.document
-    filename = Uri.parse(document.uri).fsPath.toString()
-  }
-  if (!path.isAbsolute(filename)) {
-    filename = path.join(cwd, filename)
-  }
-  let exists = await existAsync(filename)
-  if (!exists) {
-    workspace.showMessage(`${filename} not found`, 'error')
-    return
-  }
-  let root = await resolveRoot()
-  let cmd = await resolveJest()
-  let configfile = await resolveConfigFile()
-  if (configfile) cmd = `${cmd} -c ${path.relative(root, configfile)}`
-  let opts = await resolveConfig()
-  if (opts) cmd = `${cmd} ${opts}`
-  cmd = `${cmd} ${path.relative(root, filename)}`
-  await runJestCommand(root, cmd)
+async function runProject(): Promise<void> {
+  const cmd = await isWatchAllCmd(workspace)
+
+  await runJestCommand(cmd)
 }
 
-async function jestSingle(): Promise<void> {
-  let document = await workspace.document
-  if (!document) return
-  let u = Uri.parse(document.uri)
-  if (u.scheme != 'file') return
-  let root = await resolveRoot()
-  let cmd = await resolveJest()
-  let configfile = await resolveConfigFile()
-  if (configfile) cmd = `${cmd} -c ${path.relative(root, configfile)}`
-  let opts = await resolveConfig()
-  if (opts) cmd = `${cmd} ${opts}`
-  let lnum: number = (await nvim.call('line', '.')) - 1
-  let name: string
-  while (lnum > 0) {
-    let line = document.getline(lnum)
-    let ms = line.match(/^\s*(?:it|test)\((["'])(.+)\1/)
-    if (ms) {
-      name = ms[2]
-      break
-    }
-    lnum = lnum - 1
-  }
-  if (!name) return
-  name = name.replace(/'/g, "\\'")
-  cmd = `${cmd} ${path.relative(root, u.fsPath)} -t '${name}'`
-  await runJestCommand(root, cmd)
+async function runFile(): Promise<void>  {
+  const watchCmd = await isWatchCmd(workspace)
+  const currentFilePath = await getCurrentFilePath(workspace)
+
+  const cmd = `--runTestsByPath ${currentFilePath} ${watchCmd}`
+
+  await runJestCommand(cmd)
 }
 
-async function jestProject(): Promise<void> {
-  let root = await resolveRoot()
-  let cmd = await resolveJest()
-  let configfile = await resolveConfigFile()
-  if (configfile) {
-    cmd = `${cmd} -c ${path.relative(root, configfile)}`
-  }
-  let opts = await resolveConfig()
-  if (opts) cmd = `${cmd} ${opts}`
-  await runJestCommand(root, cmd)
+async function runSingleTest(): Promise<void>  {
+  const watchCmd = await isWatchCmd(workspace)
+  const testName = await findNearestTest(workspace)
+  const currentFilePath = await getCurrentFilePath(workspace)
+
+  return runJestCommand(`--runTestsByPath ${currentFilePath} -t=${testName} ${watchCmd}`)
 }
 
-async function runJestCommand(cwd: string, cmd: string): Promise<void> {
-  if (bufnr) {
-    await nvim.command(`silent! bd! ${bufnr}`)
-  }
-  let document = await workspace.document
-  let config = workspace.getConfiguration('jest', document ? document.uri : undefined)
-  let position = config.get<string>('terminalPosition')
-  bufnr = await nvim.call('coc#util#open_terminal', {
+async function runJestCommand(cmd = ""): Promise<void>  {
+  const jestBinCmd = await makeJestBinCmd(workspace)
+  const jestConfigCmd = await makeJestConfigCmd(workspace)
+
+  await openTerminal(`${jestBinCmd} ${jestConfigCmd} ${cmd}`)
+}
+
+async function openTerminal(cmd: string): Promise<void>  {
+  const flags = await getJestFlagsFromConfig(workspace)
+  const position = await getTerminalPosition(workspace)
+
+  await nvim.call("coc#util#open_terminal", {
     autoclose: 0,
     keepfocus: 1,
     position,
-    cwd,
-    cmd
+    cwd: workspace.cwd,
+    cmd: `${cmd} ${flags}`,
   })
-}
-
-async function resolveConfig(): Promise<string> {
-  let args = []
-  let names = ['watch', 'detectLeaks', 'watchman',
-    'detectOpenHandles', 'forceExit', 'noStackTrace']
-  let document = await workspace.document
-  let config = workspace.getConfiguration('jest', document ? document.uri : undefined)
-  for (let name of names) {
-    if (config.get<boolean>(name)) {
-      args.push(`--${name}`)
-    }
-  }
-  if (config.get('customFlags')) {
-    for (let flag of config.get<String[]>('customFlags')) {
-      args.push(`--${flag}`)
-    }
-  }
-  return args.join(' ')
-}
-
-async function resolveRoot(): Promise<string> {
-  let document = await workspace.document
-  let cwd: string
-  if (document) {
-    let u = Uri.parse(document.uri)
-    cwd = u.scheme == 'file' ? path.dirname(u.fsPath) : workspace.cwd
-  } else {
-    cwd = workspace.cwd
-  }
-  let dir = await findUp(['package.json'], cwd)
-  return dir || cwd
-}
-
-async function resolveConfigFile(): Promise<string> {
-  let document = await workspace.document
-  let config = workspace.getConfiguration('jest', document ? document.uri : undefined)
-  let filename = config.get<string>('configFileName')
-  let u = Uri.parse(document.uri)
-  let cwd = u.scheme == 'file' ? path.dirname(u.fsPath) : workspace.cwd
-  return await findUp([filename], cwd)
-}
-
-async function resolveJest(): Promise<string> {
-  let root = await resolveRoot()
-  if (root) {
-    for (let name of ['jest', 'jest.cmd']) {
-      let exists = await existAsync(path.join(root, `node_modules/.bin/${name}`))
-      if (exists) return `./node_modules/.bin/${name}`
-    }
-  }
-  try {
-    which.sync('jest')
-    return 'jest'
-  } catch (e) {
-    workspace.showMessage('jest executable not found!', 'error')
-    return ''
-  }
 }
