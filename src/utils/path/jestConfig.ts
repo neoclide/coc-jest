@@ -1,5 +1,5 @@
-import { workspace } from "coc.nvim"
-import { fileURLToPath } from "url"
+import { Uri, workspace } from "coc.nvim"
+import path from "path"
 import { getConfiguration } from "../configs"
 import { findUp } from "./common"
 
@@ -15,11 +15,16 @@ export const makeJestConfigCmd = async () => {
 
 const findJestConfigPath = async () => {
   const document = await workspace.document
-  const documentPath = fileURLToPath(document.uri)
   const config = await getConfiguration()
   const configFileName = config.get<string>("configFileName")
 
-  const configPath = await findUp(configFileName, documentPath)
+  let cwd = workspace.cwd;
+  if (document) {
+    const uri = Uri.parse(document.uri);
+    cwd = uri.scheme == "file" ? path.dirname(uri.fsPath) : cwd;
+  }
+
+  const configPath = await findUp(configFileName, cwd)
 
   if (configPath === "") {
     return ""
