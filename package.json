@@ -35,7 +35,7 @@
       "properties": {
         "jest.terminalPosition": {
           "type": "string",
-          "description": "Position of terminal window.",
+          "description": "Position of the jest terminal window",
           "default": "right",
           "enum": [
             "bottom",
@@ -44,39 +44,46 @@
         },
         "jest.watch": {
           "type": "boolean",
-          "default": true
+          "default": true,
+          "description": "Watch files for changes and rerun tests related to changed files"
         },
         "jest.detectLeaks": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "description": "Detect memory leaks in tests"
         },
         "jest.watchman": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "description": "Use watchman for file crawling"
         },
         "jest.detectOpenHandles": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "description": "Print out remaining open handles preventing jest from exiting"
         },
         "jest.forceExit": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "description": "Force jest to exit after all tests have completed running"
         },
         "jest.noStackTrace": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "description": "Disables stack trace in test results output"
         },
         "jest.configFileName": {
           "type": "string",
-          "default": "jest.config.js"
+          "default": "jest.config.js",
+          "description": "Jest configuration file"
         },
         "jest.customFlags": {
           "type": "array",
-          "description": "Pass additional custom flags to Jest command.",
+          "description": "Custom additional flags which will be passed to the jest command",
           "default": [],
           "items": {
             "type": "string",
-            "description": "A flag, without the '--'. For example: 'runInBand' or 'useStderr'.",
+            "description": "A flag, without the '--'. For example: 'runInBand' or 'useStderr'",
             "default": ""
           }
         }
@@ -84,7 +91,7 @@
     },
     "commands": [
       {
-        "title": "Run jest for current project.",
+        "title": "Run jest for current project",
         "category": "Jest",
         "command": "jest.projectTest"
       },
@@ -94,7 +101,7 @@
         "command": "jest.fileTest"
       },
       {
-        "title": "Run jest init in current vim's CWD",
+        "title": "Run jest init in vim's CWD",
         "category": "Jest",
         "command": "jest.init"
       }
