@@ -1,13 +1,12 @@
-import { ExtensionContext, workspace, commands } from "coc.nvim"
-import { makeJestBinCmd } from "./utils/path/jest"
-import { makeJestConfigCmd } from "./utils/path/jestConfig"
+import { commands, ExtensionContext, window, workspace } from 'coc.nvim'
 import {
-  getTerminalPosition,
-  getJestFlagsFromConfig,
+  getJestFlagsFromConfig, getTerminalPosition,
   isWatchAllCmd,
-  isWatchCmd,
+  isWatchCmd
 } from "./utils/configs"
 import { findNearestTest } from "./utils/findTest"
+import { makeJestBinCmd } from "./utils/path/jest"
+import { makeJestConfigCmd } from "./utils/path/jestConfig"
 
 const { nvim } = workspace
 
@@ -25,7 +24,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
 async function initJest(): Promise<void> {
   let { root } = workspace
 
-  workspace.runTerminalCommand("jest --init", root)
+  window.runTerminalCommand("jest --init", root)
 }
 
 async function runProject(): Promise<void> {
