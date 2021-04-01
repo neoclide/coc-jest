@@ -63,6 +63,12 @@ const isWatch = async () => {
   return config.get('watch')
 }
 
+export const getJestBinCmd = async (): Promise<string> => {
+  const config = await getConfiguration()
+
+  return config.get("binCommand");
+};
+
 export const getConfiguration = async () => {
   let document = await workspace.document
   return workspace.getConfiguration('jest', document ? document.uri : undefined)

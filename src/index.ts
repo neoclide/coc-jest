@@ -1,6 +1,6 @@
 import { commands, ExtensionContext, window, workspace } from 'coc.nvim'
 import {
-  getJestFlagsFromConfig, getTerminalPosition,
+  getJestFlagsFromConfig, getTerminalPosition, getJestBinCmd,
   isWatchAllCmd,
   isWatchCmd
 } from "./utils/configs"
@@ -52,8 +52,8 @@ async function runSingleTest(): Promise<void> {
 }
 
 async function runJestCommand(cmd = ""): Promise<void> {
-  const jestBinCmd = await makeJestBinCmd()
   const jestConfigCmd = await makeJestConfigCmd()
+  const jestBinCmd = await getJestBinCmd() || await makeJestBinCmd()
 
   await openTerminal(`${jestBinCmd} ${jestConfigCmd} ${cmd}`)
 }

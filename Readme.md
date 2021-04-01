@@ -44,6 +44,7 @@ command! JestInit :call CocAction('runCommand', 'jest.init')
 - `jest.noStackTrace`: disable stack trace, default `false`.
 - `jest.terminalPosition`: position of terminal, default `right`.
 - `jest.customFlags`: pass additional custom flags to Jest, default `[]`.
+- `jest.binCommand`: specify the runner command for jest, default `""`.
 
 ## LICENSE
 

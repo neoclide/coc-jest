@@ -86,6 +86,11 @@
             "description": "A flag, without the '--'. For example: 'runInBand' or 'useStderr'",
             "default": ""
           }
+        },
+        "jest.binCommand": {
+          "type": "string",
+          "description": "Optionally specify your runner command for jest. For example, 'yarn test'",
+          "default": ""
         }
       }
     },
