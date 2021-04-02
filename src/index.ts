@@ -15,7 +15,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
 
   subscriptions.push(commands.registerCommand("jest.init", initJest))
   subscriptions.push(commands.registerCommand("jest.projectTest", runProject))
-  subscriptions.push(commands.registerCommand("jest.fileTest", runFile, null, true))
+  subscriptions.push(commands.registerCommand("jest.fileTest", runFile))
   subscriptions.push(
     commands.registerCommand("jest.singleTest", runSingleTest),
   )
