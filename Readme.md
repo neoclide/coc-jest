@@ -5,7 +5,7 @@ Jest extension for [coc.nvim](https://github.com/neoclide/coc.nvim).
 ## Features
 
 - Use current terminal buffer for jest commands.
-- Highlight failed tests.
+- ~Highlight failed tests~. (not implemented)
 - Contributes to useful coc commands.
 - Options for customization.
 
