@@ -4,6 +4,7 @@ import {
   isWatchAllCmd,
   isWatchCmd
 } from "./utils/configs"
+import { escapeStringRegexp } from "./utils/escapeStringRegexp"
 import { findNearestTest } from "./utils/findTest"
 import { makeJestBinCmd } from "./utils/path/jest"
 import { makeJestConfigCmd } from "./utils/path/jestConfig"
@@ -45,7 +46,7 @@ async function runFile(): Promise<void> {
 async function runSingleTest(): Promise<void> {
   const watchCmd = await isWatchCmd()
   let testName = await findNearestTest()
-  testName = testName.replace(/'/g, "\\'")
+  testName = escapeStringRegexp(testName)
   const currentFilePath = await workspace.nvim.eval('expand("%:p")')
 
   return runJestCommand(`--runTestsByPath ${currentFilePath} -t='${testName}' ${watchCmd}`)
