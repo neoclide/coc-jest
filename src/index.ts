@@ -1,4 +1,5 @@
 import { commands, ExtensionContext, window, workspace } from 'coc.nvim'
+import path from 'path'
 import {
   getJestFlagsFromConfig, getTerminalPosition, getJestBinCmd,
   isWatchAllCmd,
@@ -29,26 +30,27 @@ async function initJest(): Promise<void> {
 
 async function runProject(): Promise<void> {
   const cmd = await isWatchAllCmd()
-
   await runJestCommand(cmd)
+}
+
+async function getReltivePath(): Promise<string> {
+  const currentFilePath = await workspace.nvim.eval('expand("%:p")') as string
+  return path.relative(workspace.cwd, currentFilePath)
 }
 
 async function runFile(): Promise<void> {
   const watchCmd = await isWatchCmd()
-  const currentFilePath = await workspace.nvim.eval('expand("%:p")')
-
+  const currentFilePath = await getReltivePath()
   const cmd = `--runTestsByPath ${currentFilePath} ${watchCmd}`
-
   await runJestCommand(cmd)
 }
 
 async function runSingleTest(): Promise<void> {
   const watchCmd = await isWatchCmd()
   let testName = await findNearestTest()
-  testName = testName.replace(/'/g, "\\'")
-  const currentFilePath = await workspace.nvim.eval('expand("%:p")')
-
-  return runJestCommand(`--runTestsByPath ${currentFilePath} -t='${testName}' ${watchCmd}`)
+  testName = testName.replace(/"/g, '\\"').replace(/(?<!\\)'/g, "\\'")
+  const currentFilePath = await getReltivePath()
+  return runJestCommand(`--runTestsByPath ${currentFilePath} -t="${testName}" ${watchCmd}`)
 }
 
 async function runJestCommand(cmd = ""): Promise<void> {
