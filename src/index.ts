@@ -1,11 +1,11 @@
 import { commands, ExtensionContext, window, workspace } from 'coc.nvim'
 import path from 'path'
 import {
-  getJestFlagsFromConfig, getTerminalPosition, getJestBinCmd,
+  getJestBinCmd,
+  getJestFlagsFromConfig, getTerminalPosition,
   isWatchAllCmd,
   isWatchCmd
 } from "./utils/configs"
-import { escapeStringRegexp } from "./utils/escapeStringRegexp"
 import { findNearestTest } from "./utils/findTest"
 import { makeJestBinCmd } from "./utils/path/jest"
 import { makeJestConfigCmd } from "./utils/path/jestConfig"
@@ -34,14 +34,14 @@ async function runProject(): Promise<void> {
   await runJestCommand(cmd)
 }
 
-async function getReltivePath(): Promise<string> {
+async function getRelativePath(): Promise<string> {
   const currentFilePath = await workspace.nvim.eval('expand("%:p")') as string
   return path.relative(workspace.cwd, currentFilePath)
 }
 
 async function runFile(): Promise<void> {
   const watchCmd = await isWatchCmd()
-  const currentFilePath = await getReltivePath()
+  const currentFilePath = await getRelativePath()
   const cmd = `--runTestsByPath ${currentFilePath} ${watchCmd}`
   await runJestCommand(cmd)
 }
@@ -49,8 +49,9 @@ async function runFile(): Promise<void> {
 async function runSingleTest(): Promise<void> {
   const watchCmd = await isWatchCmd()
   let testName = await findNearestTest()
+  if (!testName) return
   testName = testName.replace(/"/g, '\\"').replace(/(?<!\\)'/g, "\\'")
-  const currentFilePath = await getReltivePath()
+  const currentFilePath = await getRelativePath()
   return runJestCommand(`--runTestsByPath ${currentFilePath} -t="${testName}" ${watchCmd}`)
 }
 

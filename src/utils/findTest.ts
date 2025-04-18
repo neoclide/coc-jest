@@ -1,4 +1,4 @@
-import { workspace, Document } from 'coc.nvim'
+import { Document, workspace } from 'coc.nvim'
 
 export const findNearestTest = async () => {
   const doc = await workspace.document
@@ -14,5 +14,6 @@ const findTestName = (doc: Document, lineNumber: number) => {
   if (matchedArray != undefined) {
     return matchedArray[2]
   }
+  if (lineNumber === 0) return undefined
   return findTestName(doc, lineNumber - 1)
 }
