@@ -3,8 +3,9 @@
   "compilerOptions": {
     "declaration": false,
     "outDir": "lib",
-    "target": "es2015",
+    "target": "es2019",
     "module": "commonjs",
+    "noEmit": true,
     "moduleResolution": "node",
     "lib": ["es2018"],
     "plugins": []
